@@ -220,7 +220,7 @@ cleanVar() {
 updateCred() {
     l i 'Updating credentials...'
     updateVar authemail '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,6}$'
-    updateVar authkey '^[a-z0-9]{38}$'
+    updateVar authkey '^[a-z0-9]{37}$'
 }
 
 # Check credentials
