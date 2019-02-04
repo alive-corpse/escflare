@@ -5,23 +5,22 @@
 #
 
 # CLI structute:
-# $0 [help|h|?] # for help (if cred exists)
-# $0 <set> <credentials|cred> # for update credentials
-# $0 <set> <record> # for updating record
-# $0 <set> <ttl> # for updating default ttl
-# $0 <set> <iface> # for setting interface name
-# $0 <list> <domain.xxx> # for getting of records list
-# $0 <update|add|edit> <test1,test2,test3.domain.xxx> [ip|iface] [A|CNAME] [ttl]
-# $0 <del|remove|rm> <test1,test2,test3.domain.xxx>
+# [ ] $0 [help|h|?] # for help (if cred exists)
+# [*] $0 <set> <credentials|cred> # for update credentials
+# [ ] $0 <set> <record> # for updating record
+# [*] $0 <set> <ttl> # for updating default ttl
+# [*] $0 <set> <iface> # for setting interface name
+# [ ] $0 <list> <domain.xxx> # for getting of records list
+# [*] $0 <update|add|edit> <test1,test2,test3.domain.xxx> [ip|iface] [A|CNAME] [ttl]
+# [*] $0 <del|remove|rm> <test1,test2,test3.domain.xxx>
 
 # TODO:
-# Get ip address through separate variable
-# Selfsaved last content and last domain with checking before update
-# Check last value before clean and update vars
+# Update help method
+# Move README.md to README_RUS.md
+# Create and update README.md
 
 # You can place some (or all) of parameters below instead of using them in commandline
 ###VARSBEGIN###
-#domain='' # domain name (for example: test.yourdomain.xx)
 authemail='' # email used for authentication
 authkey='' # api key
 iface='' # interface name
@@ -29,10 +28,11 @@ ttl='' # default ttl for new records
 zid='' # zone id
 zdomain='' # domain for zone id updating
 llevel='info' # loglevel (debug/info/warning)
+lastupdate='' # info from last update (do not change)
 ###VARSEND###
 
 uri='https://api.cloudflare.com/client/v4/'
-resp=''; rid=''; rcontent=''; rttl=''
+resp=''; rid=''; rcontent=''; rttl=''; rip=''
 h="Run \"$0 help\" for help."
 
 [ -n "$ll" ] && LOGLEVEL="$ll" || LOGLEVEL="$llevel"
@@ -184,14 +184,18 @@ updateVar() {
     else
         res="$4"
     fi
-    if [ -n "$nline" ]; then
-        sed -i "$nline"'s/^.*$/'"$1"'='"'""$res""'"" # $comm"'/' "$0"
+    if [ "$res" != "$val" ]; then
+        if [ -n "$nline" ]; then
+            sed -i "$nline"'s/^.*$/'"$1"'='"'""$res""'"" # $comm"'/' "$0"
+        else
+            nline=`cat -n "$0" |  awk '$2~/###VARSEND###/ {print $1}'`
+            sed -i "$nline"'i'"$1=\'$res\' # $comm" "$0"
+        fi
+        sync
+        l d "Variable $1 is setted with value $res"
     else
-        nline=`cat -n "$0" |  awk '$2~/###VARSEND###/ {print $1}'`
-        sed "$nline"'i'"$1=\'$res\' # $comm" "$0"
+        l n "Variable $1 is not changed and will not be updated"
     fi
-    sync
-    l d "Variable $1 is setted with value $res"
     export "$1"="$res"
 }
 
@@ -312,9 +316,9 @@ getRecord() {
 getIP() {
     if [ -n "$1" ]; then
         if [ -n "$(echo "$1" | grep '^[a-zA-Z][a-zA-Z0-9-]*$')" ]; then
-            if ip=`ip address show "$1" | sed '/^[ ]*inet /!d;s/^[ ]*inet //;s/ .*$//;s/\/[0-9]*$//'`; then
-                [ -z "$(echo "$ip" | grep '\([0-9]\{1,3\}\.\)\{3\}[0-9]\{1,3\}')" ] && l fe "Can't get ip address from interface $2"
-                echo "$ip"
+            if rip=`ip address show "$1" | sed '/^[ ]*inet /!d;s/^[ ]*inet //;s/ .*$//;s/\/[0-9]*$//'`; then
+                [ -z "$(echo "$rip" | grep '\([0-9]\{1,3\}\.\)\{3\}[0-9]\{1,3\}')" ] && l fe "Can't get ip address from interface $2"
+                l i "Got ip $rip from interface $1"
             else
                 l fe "Can't get ip address from interface $iface" 127
             fi
@@ -350,32 +354,36 @@ updateRecords() {
     [ -z "$3" ] && rtype='A' || rtype="$3"
     [ -z "$4" ] && cttl="$ttl" || cttl="$4"
     [ -z "$cttl" ] && l fe "Fail to get ttl for updating DNS record(s)"
-	cdomain=`getDomain "$1"`
-	updateZoneID "$cdomain"
-    records=`echo "$1" | sed 's/\..*$//;s/,/ /g;s/\*/#/'`
-    for rec in $records; do
-        [ "$rec" = '#' ] && rec='*'
-        [ "$rec" = "@" ] && frec="$cdomain" || frec="$rec.$cdomain"
-        rid=''
-        getRecord "$frec"
-        if [ -n "$rid" ]; then
-            if [ "$rcontent$rttl" != "$cont$cttl" ]; then
-                l i "Updating record $frec"
-                api "zones/$zid/dns_records/$rid" PUT '{"id":"'"$zid"'","type":"'"$rtype"'","name":"'"$frec"'","content":"'"$cont"'","ttl":'"$cttl"'}'
+    if [ "$lastupdate" != "$1:$2:$3:$4" ]; then 
+        cdomain=`getDomain "$1"`
+        updateZoneID "$cdomain"
+        records=`echo "$1" | sed 's/\..*$//;s/,/ /g;s/\*/#/'`
+        for rec in $records; do
+            [ "$rec" = '#' ] && rec='*'
+            [ "$rec" = "@" ] && frec="$cdomain" || frec="$rec.$cdomain"
+            rid=''
+            getRecord "$frec"
+            if [ -n "$rid" ]; then
+                if [ "$rcontent$rttl" != "$cont$cttl" ]; then
+                    l i "Updating record $frec"
+                    api "zones/$zid/dns_records/$rid" PUT '{"id":"'"$zid"'","type":"'"$rtype"'","name":"'"$frec"'","content":"'"$cont"'","ttl":'"$cttl"'}'
+                else
+                    l i "Content for record $frec does not changed"
+                fi
             else
-                l i "Content for recore $frec does not changed"
+                l i "Record $frec not found, creating new one"
+                api "zones/$zid/dns_records" POST '{"type":"'"$rtype"'","name":"'"$frec"'","content":"'"$cont"'","ttl":'"$cttl"',"proxied":false}'
             fi
-        else
-            l i "Record $frec not found, creating new one"
-            api "zones/$zid/dns_records" POST '{"type":"'"$rtype"'","name":"'"$frec"'","content":"'"$cont"'","ttl":'"$cttl"',"proxied":false}'
-        fi
-    done
+        done
+        updateVar lastupdate '' '' "$1:$2:$3:$4"
+    else
+        l n "There is no changes since last update"
+    fi
 }
 
 
 d
 l i 'Start escflare script...'
-
 
 case "$1" in
     test)
@@ -410,15 +418,11 @@ case "$1" in
                 cleanVar ttl
                 cleanVar zid
                 cleanVar zdomain
-            ;;
-            zone)
-                cleanVar zone
-            ;;
-            zid)
-                cleanVar zid
+                cleanVar lastupdate
+                updateVar llevel '' '' info
             ;;
             *)
-                help
+                cleanVar "$2"
             ;;
         esac
     ;;
@@ -438,6 +442,7 @@ case "$1" in
 esac
 
 l i "Finished"
+d
 exit 0
 
 #vim: syntax=sh nu expandtab shiftwidth=4 softtabstop=4 tabstop=4
