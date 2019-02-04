@@ -16,7 +16,7 @@
 ### Установка:
 ```bash
 wget https://raw.githubusercontent.com/alive-corpse/escflare/master/escflare
-chmod +x escflare
+chmod +xw escflare
 ```
 
 ### Использование:
