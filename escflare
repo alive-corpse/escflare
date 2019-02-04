@@ -4,7 +4,7 @@
 # by Evgeniy Shumilov <evgeniy.shumilov@gmail.com>
 #
 
-#TODO:
+# CLI structute:
 # $0 [help|h|?] # for help (if cred exists)
 # $0 <set> <credentials|cred> # for update credentials
 # $0 <set> <record> # for updating record
@@ -14,8 +14,10 @@
 # $0 <update|add|edit> <test1,test2,test3.domain.xxx> [ip|iface] [A|CNAME] [ttl]
 # $0 <del|remove|rm> <test1,test2,test3.domain.xxx>
 
-#ERRORS:
+# TODO:
 # Get ip address through separate variable
+# Selfsaved last content and last domain with checking before update
+# Check last value before clean and update vars
 
 # You can place some (or all) of parameters below instead of using them in commandline
 ###VARSBEGIN###
