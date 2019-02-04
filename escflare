@@ -165,7 +165,7 @@ help() {
 updateVar() {
     [ -z "$1" ] && l fe "Variable name not exists"
     l d "Updating variable $1"
-    var=`cat -n "$0" | sed '1,/###VARSBEGIN###/d;/###VARSEND###/,$d;s/^[^0-9]\+//;/\t'"$1"'=/!d'`
+    var=`awk '{print NR"\t"$0}' "$0" | sed '1,/###VARSBEGIN###/d;/###VARSEND###/,$d;s/^[^0-9]\+//;/\t'"$1"'=/!d'`
     [ -n "$3" ] && comm="$3" || comm=`echo "$var" | sed '/#/!d;s/^.*#[ \t]*//'`
     [ -z "$comm" ] && comm="$1"
     val=`echo "$var" | sed 's/[ \t]*#.*$//;s/^[0-9]\+[ \t]*'"$1"'=//;s/^["'"'"']//;s/["'"'"']$//'`
@@ -188,7 +188,7 @@ updateVar() {
         if [ -n "$nline" ]; then
             sed -i "$nline"'s/^.*$/'"$1"'='"'""$res""'"" # $comm"'/' "$0"
         else
-            nline=`cat -n "$0" |  awk '$2~/###VARSEND###/ {print $1}'`
+            nline=`awk '{print NR"\t"$0}' "$0" |  awk '$2~/###VARSEND###/ {print $1}'`
             sed -i "$nline"'i'"$1=\'$res\' # $comm" "$0"
         fi
         sync
@@ -203,14 +203,14 @@ updateVar() {
 # 1 - variable name
 cleanVar() {
     l i "Cleaning variable $1"
-    var=`cat -n "$0" | sed '1,/###VARSBEGIN###/d;/###VARSEND###/,$d;s/^[^0-9]\+//;/\t'"$1"'=/!d'`
+    var=`awk '{print NR"\t"$0}' "$0" | sed '1,/###VARSBEGIN###/d;/###VARSEND###/,$d;s/^[^0-9]\+//;/\t'"$1"'=/!d'`
     comm=`echo "$var" | sed '/#/!d;s/^.*#[ \t]*//'`
     [ -n "$comm" ] && comm=`echo " # $comm"`
     nline=`echo "$var" | awk '{print $1}'`
     if [ -n "$nline" ]; then
         sed -i "$nline"'s/^.*$/'"$1=''$comm"'/' "$0"
     else
-        nline=`cat -n "$0" |  awk '$2~/###VARSEND###/ {print $1}'`
+        nline=`awk '{print NR" "$0}' "$0" |  awk '$2~/###VARSEND###/ {print $1}'`
         sed "$nline"'i'"$1=\'\'$comm" "$0"
     fi
     sync
