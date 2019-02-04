@@ -253,8 +253,8 @@ api() {
     resp=''
     fulluri="$uri$1"
     [ -n "$2" ] && METHOD="$2" || METHOD='GET'
-    [ -n "$3" ] && DATA=" --data $3"
     l d "API query: $fulluri"
+    [ -n "$3" ] && DATA=" --data $3" && l d "DATA: $3"
     if resp=`curl -s -X "$METHOD" -H "X-Auth-Key: $authkey" -H "X-Auth-Email: $authemail" -H 'Content-Type: application/json; charset=utf-8' "$fulluri" $DATA`; then
         if [ -n "$resp" ]; then        
             l d "Response:
@@ -341,13 +341,15 @@ updateRecords() {
 	[ -z "$2$iface" ] && l fe "Empty record content for updating" 127
     cont=''
     if [ -z "$2" ]; then # if 2nd parameter is empty, trying to get interface from saved variable
-        cont=`getIP "$iface"`
+        getIP "$iface"
+        cont="$rip"
     else # Trying to check if 2nd parameter is ip address
         if [ -n "$(echo "$2" | grep '\([0-9]\{1,3\}\.\)\{3\}[0-9]\{1,3\}')" ]; then
             cont="$2"
             l i "IP address for updating: $cont"
         else # 2nd parameter is not ip address, checking if it's an interface
-            cont=`getIP "$2"`
+            getIP "$2"
+            cont="$rip"
         fi
     fi
     [ -z "$cont" ] && l fe "Fail to get content for updating dns records"
