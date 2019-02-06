@@ -1,61 +1,98 @@
 # ESCFLARE
 
-## Скрипт добавления/обновления DNS записей сервиса CloudFlare
+## Script for appending/updating DNS records on CloudFlare
 
 ![](https://github.com/alive-corpse/escflare/raw/master/screen.png)
 
-### Возможности:
-* обновление dns записи, в случае её отсутствия - создание записи
-* работа на OpenWRT и подобных прошивках, для OpenWRT необходима установка пакетов ca-bundle и curl
-* передача параметров в командной строке, либо прописывание в самом скрипте
-* обновление сразу нескольких записей для одного домена
-* передача в качестве параметра либо IP адреса, либо имени интерфейса
+### Features:
+* updating of existing records, creating new records in case of notexisting
+* should working on OpenWRT based devices and similar firmwares based devices, required ca-bundle and curl
+* using parameters from cli or saving them inside script
+* bulk updating of few records for one run
+* using IP address for updating as well as network interface name
 
-##### Примечание: скрипт изначально рассчитан на работу только с записями A-типа.
+##### Notice: at the moment script working only with A-type records.
 
-### Установка:
+### Setup:
 ```bash
 wget https://raw.githubusercontent.com/alive-corpse/escflare/master/escflare
 chmod +xw escflare
 ```
 
-### Использование:
+### Using:
 
-Для использования необходим глобальный ключ API. Его можно найти в профиле аккаунта CloudFlare.
+You should get api key in your CloudFlare's profile. In "API Keys" section
+find "View" button near the "Global API Key label".
 
-##### Передача параметров в командной строке
+##### Simple way to use
 ```
 ./escflare <add|create|update> <subdomain>.<domain.name> <iface|ip> [ttl]
 ```
-Примеры:
+Examples:
 ```bash
-# vailiy.pupkin.ru - доменное имя с сабдоменом
-# wan0 - имя интерфейса, можно указать вместо IP адреса
+# vailiy.pupkin.ru - domain name with subdomain(s)
+# wan0 - network interface name (you can also use IP address instead)
 ./escflare update vasiliy.pupkin.ru wan0
 ```
 ```bash
-# в случае обновления нескольких записей, сабдомены можно указать через запятую (без пробелов), в том числе можно указывать символы '*' и '@' для обновления соответствующих записей, в этом случае первый параметр нужно заключить в одиночные кавычки
-./escflare 'vasiliy,*,ivan,sergey.pupkin.ru' 123.234.123.234 14400
+# Subdomains can be divided by comma. You can use * for wildcard and @ for root record. If some record is not exists, it will be created. 
+./escflare 'vasiliy,*,@,ivan,sergey.pupkin.ru' 123.234.123.234 14400
 ```
 
-##### Примечание
-При первом запуске скрипт в интерактивном режиме запросит необходимые для авторизации данные и ttl по умолчанию для обновления записей, после чего сохранит их внутри себя.
+##### Notices
+* At first run script will ask you for all needed variables such as email, key, default tty and will save them inside itself.
 
-### Логирование
+* It will not update record again with the same content and ttl. You can force updating with the same data by setting variable forcedupdate with sone nonempty value.
 
-Есть три уровня логирования: debug/info/warning, по умолчанию стоит уровень info. Для изменения найдите и замените значение в строке:
+
+### Getting all of current parameters
+You can get all parameters and values by running:
 ```bash
-LOGLEVEL='info'
+./escflare <list|ls|show>
 ```
-По умолчанию текущая дата и время, формат и содержимое в строке:
+
+### Setting/updating parameters
+
+Updating credentials:
 ```bash
-LPREF='date +%Y.%m.%d-%H:%M:%S'
+./escflare set cred
 ```
-Ширина разделителя при отсутствии tput:
+
+Updating default ttl value:
 ```bash
-DEFAULT_COLS=70
+./escflare set ttl
 ```
-Включение/отключение цвета в выводе:
+
+Updating default iface value:
 ```bash
-LCOLOR=1
+./escflare set iface
 ```
+
+Updating forcedupdate value (you can just set it to 1 or clean to turn off forced updating):
+```bash
+./escflare set forcedupdate
+```
+
+### Cleaning/resetting parameters
+
+Cleaning parameter by it's name:
+```bash
+./escflare <clean|clear> <variable name>
+```
+
+Cleaning all of main parameters:
+```bash
+./escflare <clean|clear> all
+```
+
+### Logging
+
+There are three main logging levels: debug/info/warning, info is setted by default. For permanent changing set value for llevel parameter:
+```bash
+./escflare set llevel
+```
+Also you can change it temporary by setting ll environment value:
+```bash
+ll=debug ./escflare update vasiliy.pupkin.ru wan0
+```
+

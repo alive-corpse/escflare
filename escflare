@@ -152,18 +152,19 @@ help() {
     echo "  Frist parameteradd,edit,update - is equal. Subdomains can be divided by"
     echo "  comma. You can use * for wildcard and @ for root record. If some record"
     echo "  is not exists, it will be created. At first run script will ask you for"
-    echo "  all needed variables such as email, key, default tty."
+    echo "  all needed variables such as email, key, default ttl."
     echo "Examples:"
     echo "  $0 add test.domain.xxx 127.0.0.1 14400"
     echo "  $0 update www,test,*,@.domain.xxx eth0"
     d
-    echo "After successfull update script will store updated domain, content and tty"
-    echo "of record inside itself and will not be update record again with the same"
+    echo "After successfull update script will store updated domain, content and ttl"
+    echo "of record inside itself and will not update record again with the same"
     echo "content and ttl. You can force updating with the same data by setting"
     echo "variable forcedupdate with sone nonempty value."
     d
     echo "You can get list of current variables and it's values by running:"
     echo "  $0 <list|ls|show>"
+    d
     echo "Updating credentials:"
     echo "  $0 set cred"
     echo "Updating ttl:"
@@ -171,7 +172,7 @@ help() {
     echo "Updating interface name:"
     echo "  $0 set <iface|interface>"
     echo "Updating forcedupdate:"
-    echo "  $0 forcedupdate"
+    echo "  $0 set forcedupdate"
     d
     echo "Clearing values:"
     echo "  $0 <clean|clear> <variable name>"
