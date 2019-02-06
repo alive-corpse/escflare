@@ -30,6 +30,7 @@ zid='' # zone id
 zdomain='' # domain for zone id updating
 llevel='info' # loglevel (debug/info/warning)
 lastupdate='' # info from last update (do not change)
+forcedupdate='' # forced update (should not be empty to force update)
 ###VARSEND###
 
 uri='https://api.cloudflare.com/client/v4/'
@@ -150,11 +151,32 @@ help() {
     echo "  $0 <add|edit|update> <subdomain(s)>.<domain> <ip address|interface> [ttl]"
     echo "  Frist parameteradd,edit,update - is equal. Subdomains can be divided by"
     echo "  comma. You can use * for wildcard and @ for root record. If some record"
-    echo "  is not exists, it will be created. At first time script will ask you for"
+    echo "  is not exists, it will be created. At first run script will ask you for"
     echo "  all needed variables such as email, key, default tty."
     echo "Examples:"
     echo "  $0 add test.domain.xxx 127.0.0.1 14400"
     echo "  $0 update www,test,*,@.domain.xxx eth0"
+    d
+    echo "After successfull update script will store updated domain, content and tty"
+    echo "of record inside itself and will not be update record again with the same"
+    echo "content and ttl. You can force updating with the same data by setting"
+    echo "variable forcedupdate with sone nonempty value."
+    d
+    echo "You can get list of current variables and it's values by running:"
+    echo "  $0 <list|ls|show>"
+    echo "Updating credentials:"
+    echo "  $0 set cred"
+    echo "Updating ttl:"
+    echo "  $0 set ttl"
+    echo "Updating interface name:"
+    echo "  $0 set <iface|interface>"
+    echo "Updating forcedupdate:"
+    echo "  $0 forcedupdate"
+    d
+    echo "Clearing values:"
+    echo "  $0 <clean|clear> <variable name>"
+    echo "Clearing all values:"
+    echo "  $0 <clean|clear> all"
     d
 }
 
@@ -215,6 +237,12 @@ cleanVar() {
         sed "$nline"'i'"$1=\'\'$comm" "$0"
     fi
     sync
+}
+
+# List vars
+listVars() {
+    l i "List of variables:"
+    sed '1,/###VARSBEGIN###/d;/###VARSEND###/,$d' "$0"
 }
 
 # Updating credentials
@@ -357,6 +385,7 @@ updateRecords() {
     [ -z "$3" ] && rtype='A' || rtype="$3"
     [ -z "$4" ] && cttl="$ttl" || cttl="$4"
     [ -z "$cttl" ] && l fe "Fail to get ttl for updating DNS record(s)"
+    [ -n "$forcedupdate" ] && l d "Forced update is setted" && lastupdate="$1"
     if [ "$lastupdate" != "$1:$2:$3:$4" ]; then 
         cdomain=`getDomain "$1"`
         updateZoneID "$cdomain"
@@ -408,7 +437,10 @@ case "$1" in
                 updateVar iface '^[a-zA-Z][a-zA-Z0-9-]*$'
             ;;
             loglevel)
-                udpateVar ttl '^(debug|info|warning)$'
+                udpateVar llevel '^(debug|info|warning)$'
+            ;;
+            forcedupdate)
+                updateVar forcedupdate
             ;;
             *)
                 help
@@ -425,6 +457,7 @@ case "$1" in
                 cleanVar zid
                 cleanVar zdomain
                 cleanVar lastupdate
+                cleanVar forcedupdate
                 updateVar llevel '' '' info
             ;;
             *)
@@ -432,8 +465,8 @@ case "$1" in
             ;;
         esac
     ;;
-    list|ls)
-        checkMainVars
+    list|ls|show)
+        listVars
     ;;
     update|add|edit)
         checkMainVars
