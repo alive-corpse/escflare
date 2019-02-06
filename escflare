@@ -4,25 +4,9 @@
 # by Evgeniy Shumilov <evgeniy.shumilov@gmail.com>
 #
 
-# CLI structute:
-# [ ] $0 [help|h|?] # for help (if cred exists)
-# [*] $0 <set> <credentials|cred> # for update credentials
-# [ ] $0 <set> <record> # for updating record
-# [*] $0 <set> <ttl> # for updating default ttl
-# [*] $0 <set> <iface> # for setting interface name
-# [ ] $0 <list> <domain.xxx> # for getting of records list
-# [*] $0 <update|add|edit> <test1,test2,test3.domain.xxx> [ip|iface] [A|CNAME] [ttl]
-# [*] $0 <del|remove|rm> <test1,test2,test3.domain.xxx>
-
-# TODO:
-# Update help method
-# Move README.md to README_RUS.md
-# Create and update README.md
-# Self-save last update timestamp ?
-
 # You can place some (or all) of parameters below instead of using them in commandline
 ###VARSBEGIN###
-authemail='' # email used for authentication
+authemail='test@test.com' # email used for authentication
 authkey='' # api key
 iface='' # interface name
 ttl='' # default ttl for new records
